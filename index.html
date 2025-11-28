@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Tour 360° Casa - Marzipano</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body, html { margin:0; padding:0; height:100%; overflow:hidden; background:#000; }
+        #pano { width:100%; height:100%; }
+        .scene-selector {
+            position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+            background:rgba(0,0,0,0.75); border-radius:12px; padding:10px 16px;
+            color:white; z-index:9999; display:flex; gap:12px; align-items:center;
+        }
+        .scene-selector button { background:none; border:none; color:white; font-size:28px; cursor:pointer; }
+        .scene-selector select { background:rgba(255,255,255,0.15); color:white; border:none; padding:10px 14px; border-radius:8px; font-size:16px; min-width:240px; }
+    </style>
+    <!-- Marzipano oficial (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/marzipano@0.11.0/dist/marzipano.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/marzipano@0.11.0/dist/marzipano.css" rel="stylesheet">
+</head>
+<body>
+    <div id="pano"></div>
+
+    <div class="scene-selector">
+        <button onclick="prev()">Previous</button>
+        <select id="scenes" onchange="viewer.lookTo(sceneList[this.value].lookAt)"></select>
+        <button onclick="next()">Next</button>
+    </div>
+
+    <script>
+        const viewer = new Marzipano.Viewer(document.getElementById('pano'));
+
+        // Datos de tus 6 escenas
+        const scenesData = [
+            { id: "m1", title: "1. Ingreso",          file: "m1.jpg" },
+            { id: "m2", title: "2. Cocina / Comedor", file: "m2.jpg" },
+            { id: "m3", title: "3. Estudio",          file: "m3.jpg" },
+            { id: "m4", title: "4. Patio",            file: "m4.jpg" },
+            { id: "m5", title: "5. Terraza",          file: "m5.jpg" },
+            { id: "m6", title: "6. Sala de juegos",   file: "m6.jpg" }
+        ];
+
+        const sceneList = {};
+        let currentIndex = 0;
+
+        scenesData.forEach((s, i) => {
+            const source = Marzipano.ImageUrlSource.fromString(
+                "https://raw.githubusercontent.com/jomviz/tour-marzipano/main/" + s.file
+            );
+            const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
+            const limiter = Marzipano.RectilinearView.limit.traditional(4096, 100*Math.PI/180, 120*Math.PI/180);
+            const view = new Marzipano.RectilinearView({ yaw: 0, pitch: 0, roll: 0 }, limiter);
+            const scene = viewer.createScene({ source, geometry, view, pinFirstLevel: true });
+            sceneList[s.id] = { scene: scene, lookAt: { yaw: 0, pitch: 0 } };
+
+            // Hotspots (ejemplo para m1 → m2)
+            if (i === 0) {
+                scene.hotspotContainer().createHotspot(document.createElement("div"), 
+                    { yaw: 0.3, pitch: 0 }, 
+                    { perspective: { radius: 300, extraTransforms: "rotateX(0deg)" } }
+                ).innerHTML = '<div style="background:#007bff;color:white;padding:8px 12px;border-radius:8px;cursor:pointer;">Cocina →</div>';
+            }
+        });
+
+        // Selector
+        const select = document.getElementById('scenes');
+        scenesData.forEach((s, i) => {
+            const opt = new Option(s.title, i);
+            select.add(opt);
+        });
+
+        function load(index) {
+            currentIndex = index;
+            const id = scenesData[index].id;
+            sceneList[id].scene.switchTo({ transitionDuration: 800 });
+            select.selectedIndex = index;
+        }
+        function next() { load((currentIndex + 1) % scenesData.length); }
+        function prev() { load((currentIndex - 1 + scenesData.length) % scenesData.length); }
+
+        // Inicio
+        load(0);
+    </script>
+</body>
+</html>
