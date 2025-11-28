@@ -73,10 +73,26 @@ scene.addImageUrl("https://raw.githubusercontent.com/jomviz/tour-marzipano/main/
 
         // Selector
         const select = document.getElementById('scenes');
-        scenesData.forEach((s, i) => {
-            const opt = new Option(s.title, i);
-            select.add(opt);
-        });
+       scenesData.forEach((s, i) => {
+    const source = Marzipano.ImageUrlSource.fromString("{f}");
+    const textureStore = new Marzipano.TextureStore(source, viewer);
+    const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
+    const view = new Marzipano.RectilinearView({ yaw: 0, pitch: 0 });
+    const limiter = Marzipano.RectilinearView.limit.traditional(4096, 100*Math.PI/180, 120*Math.PI/180);
+    view.setParameters(limiter);
+
+    const scene = viewer.createScene({
+        source: source,
+        geometry: geometry,
+        view: view,
+        textureStore: textureStore,
+        pinFirstLevel: true
+    });
+
+    scene.addImageUrl("https://raw.githubusercontent.com/jomviz/tour-marzipano/main/" + s.file);
+
+    sceneList[s.id] = { scene: scene, lookAt: { yaw: 0, pitch: 0 } };
+});
 
         function load(index) {
             currentIndex = index;
