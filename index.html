@@ -42,10 +42,20 @@
         const sceneList = {};
         let currentIndex = 0;
 
-        scenesData.forEach((s, i) => {
-            const source = Marzipano.ImageUrlSource.fromString(
-                "https://raw.githubusercontent.com/jomviz/tour-marzipano/main/" + s.file
-            );
+const source = Marzipano.ImageUrlSource.fromString(
+    "{f}" // esto le dice a Marzipano que use la URL completa que le pasamos después
+);
+const textureStore = new Marzipano.TextureStore(source, viewer);
+const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
+const view = new Marzipano.RectilinearView();
+const scene = viewer.createScene({
+    source: source,
+    geometry: geometry,
+    view: view,
+    textureStore: textureStore,
+    pinFirstLevel: true
+});
+scene.addImageUrl("https://raw.githubusercontent.com/jomviz/tour-marzipano/main/" + s.file);
             const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
             const limiter = Marzipano.RectilinearView.limit.traditional(4096, 100*Math.PI/180, 120*Math.PI/180);
             const view = new Marzipano.RectilinearView({ yaw: 0, pitch: 0, roll: 0 }, limiter);
