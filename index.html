@@ -12,10 +12,10 @@
             background:rgba(0,0,0,0.75); border-radius:12px; padding:10px 16px;
             color:white; z-index:9999; display:flex; gap:12px; align-items:center;
         }
-        .scene-selector button { background:none; border:none; color:white; font-size:28px; cursor:pointer; }
+        .scene-selector button { background:none; border:none; color:white; font-size:28px; cursor:pointer; padding:0 8px; }
         .scene-selector select { background:rgba(255,255,255,0.15); color:white; border:none; padding:10px 14px; border-radius:8px; font-size:16px; min-width:240px; }
     </style>
-    <!-- Marzipano oficial (CDN) -->
+    <!-- Marzipano CDN -->
     <script src="https://cdn.jsdelivr.net/npm/marzipano@0.11.0/dist/marzipano.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/marzipano@0.11.0/dist/marzipano.css" rel="stylesheet">
 </head>
@@ -23,88 +23,86 @@
     <div id="pano"></div>
 
     <div class="scene-selector">
-        <button onclick="prev()">Previous</button>
-        <select id="scenes" onchange="viewer.lookTo(sceneList[this.value].lookAt)"></select>
-        <button onclick="next()">Next</button>
+        <button onclick="prev()">←</button>
+        <select id="scenes" onchange="switchScene(this.value)"></select>
+        <button onclick="next()">→</button>
     </div>
 
     <script>
         const viewer = new Marzipano.Viewer(document.getElementById('pano'));
 
-        // Datos de tus 6 escenas
+        // Tus 4 imágenes reales (agregá m5 y m6 cuando las subas)
         const scenesData = [
-            { id: "m1", title: "1. Ingreso",          file: "m1.jpg" },
+            { id: "m1", title: "1. Ingreso", file: "m1.jpg" },
             { id: "m2", title: "2. Cocina / Comedor", file: "m2.jpg" },
-            { id: "m3", title: "3. Estudio",          file: "m3.jpg" },
-            { id: "m4", title: "4. Patio",            file: "m4.jpg" }
+            { id: "m3", title: "3. Estudio", file: "m3.jpg" },
+            { id: "m4", title: "4. Patio", file: "m4.jpg" }
+            // { id: "m5", title: "5. Terraza", file: "m5.jpg" },
+            // { id: "m6", title: "6. Sala de juegos", file: "m6.jpg" }
         ];
 
         const sceneList = {};
         let currentIndex = 0;
 
-const source = Marzipano.ImageUrlSource.fromString(
-    "{f}" // esto le dice a Marzipano que use la URL completa que le pasamos después
-);
-const textureStore = new Marzipano.TextureStore(source, viewer);
-const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
-const view = new Marzipano.RectilinearView();
-const scene = viewer.createScene({
-    source: source,
-    geometry: geometry,
-    view: view,
-    textureStore: textureStore,
-    pinFirstLevel: true
-});
-scene.addImageUrl("https://raw.githubusercontent.com/jomviz/tour-marzipano/main/" + s.file);
-            const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
-            const limiter = Marzipano.RectilinearView.limit.traditional(4096, 100*Math.PI/180, 120*Math.PI/180);
-            const view = new Marzipano.RectilinearView({ yaw: 0, pitch: 0, roll: 0 }, limiter);
-            const scene = viewer.createScene({ source, geometry, view, pinFirstLevel: true });
-            sceneList[s.id] = { scene: scene, lookAt: { yaw: 0, pitch: 0 } };
+        scenesData.forEach((s, i) => {
+            // FIX 1: Source con template {f} para URLs externas
+            const source = Marzipano.ImageUrlSource.fromString("{f}");
+            const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]); // Cambiá a tu resolución real (ej: 4096 si son más chicas)
+            const limiter = Marzipano.RectilinearView.limit.traditional(4096, 100 * Math.PI / 180, 120 * Math.PI / 180);
+            const view = new Marzipano.RectilinearView({ yaw: 0, pitch: 0 }, limiter);
 
-            // Hotspots (ejemplo para m1 → m2)
+            // FIX 2: TextureStore para cargar imágenes
+            const textureStore = new Marzipano.TextureStore(source, viewer);
+
+            const scene = viewer.createScene({
+                source: source,
+                geometry: geometry,
+                view: view,
+                textureStore: textureStore,
+                pinFirstLevel: true
+            });
+
+            // FIX 3: addImageUrl con la URL real de GitHub raw
+            scene.addImageUrl("https://raw.githubusercontent.com/jomviz/tour-marzipano/main/" + s.file);
+
+            sceneList[s.id] = { scene: scene, index: i };
+
+            // Hotspot ejemplo (para m1 → m2)
             if (i === 0) {
-                scene.hotspotContainer().createHotspot(document.createElement("div"), 
+                const hotspot = scene.hotspotContainer().createHotspot(document.createElement("div"), 
                     { yaw: 0.3, pitch: 0 }, 
                     { perspective: { radius: 300, extraTransforms: "rotateX(0deg)" } }
-                ).innerHTML = '<div style="background:#007bff;color:white;padding:8px 12px;border-radius:8px;cursor:pointer;">Cocina →</div>';
+                );
+                hotspot.element.innerHTML = '<div style="background:#007bff;color:white;padding:8px 12px;border-radius:8px;cursor:pointer;">→ Cocina</div>';
+                hotspot.element.onclick = () => switchScene("m2");
             }
         });
 
         // Selector
         const select = document.getElementById('scenes');
-       scenesData.forEach((s, i) => {
-    const source = Marzipano.ImageUrlSource.fromString("{f}");
-    const textureStore = new Marzipano.TextureStore(source, viewer);
-    const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
-    const view = new Marzipano.RectilinearView({ yaw: 0, pitch: 0 });
-    const limiter = Marzipano.RectilinearView.limit.traditional(4096, 100*Math.PI/180, 120*Math.PI/180);
-    view.setParameters(limiter);
+        scenesData.forEach((s, i) => {
+            const opt = new Option(s.title, s.id);
+            select.add(opt);
+        });
 
-    const scene = viewer.createScene({
-        source: source,
-        geometry: geometry,
-        view: view,
-        textureStore: textureStore,
-        pinFirstLevel: true
-    });
-
-    scene.addImageUrl("https://raw.githubusercontent.com/jomviz/tour-marzipano/main/" + s.file);
-
-    sceneList[s.id] = { scene: scene, lookAt: { yaw: 0, pitch: 0 } };
-});
-
-        function load(index) {
-            currentIndex = index;
-            const id = scenesData[index].id;
-            sceneList[id].scene.switchTo({ transitionDuration: 800 });
-            select.selectedIndex = index;
+        function switchScene(id) {
+            const scene = sceneList[id].scene;
+            scene.switchTo({ transitionDuration: 800 });
+            currentIndex = sceneList[id].index;
+            select.value = id;
         }
-        function next() { load((currentIndex + 1) % scenesData.length); }
-        function prev() { load((currentIndex - 1 + scenesData.length) % scenesData.length); }
+
+        function next() { 
+            const idx = (currentIndex + 1) % scenesData.length; 
+            switchScene(scenesData[idx].id); 
+        }
+        function prev() { 
+            const idx = (currentIndex - 1 + scenesData.length) % scenesData.length; 
+            switchScene(scenesData[idx].id); 
+        }
 
         // Inicio
-        load(0);
+        switchScene("m1");
     </script>
 </body>
 </html>
